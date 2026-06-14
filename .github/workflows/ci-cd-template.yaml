@@ -7,11 +7,21 @@ on:
       environment:
         required: true
         type: string
+        
     secrets:
       DEPLOY_KEY:
         required: true
       DISCORD_WEBHOOK_URL:
         required: true
+      TWILIO_ACCOUNT_SID:
+        required: true
+      TWILIO_AUTH_TOKEN:
+        required: true
+      TWILIO_WHATSAPP_NUMBER:
+        required: true
+      TARGET_WHATSAPP_NUMBER:
+        required: true
+
 
 # ── FIX #3: Declare write access so git push-back is authorized ────────────
 permissions:
