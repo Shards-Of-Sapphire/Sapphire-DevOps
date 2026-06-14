@@ -171,20 +171,20 @@ jobs:
           fi
 
   # --- JOB 4: Notify WhatsApp ---
-  notify-whatsapp:
+    notify-whatsapp:
     name: Notify WhatsApp
     needs: [deploy, update-changelog]
     runs-on: ubuntu-latest
-    if: always()  # Run even if previous jobs fail
+    if: always()
 
     steps:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install Twilio
-        run: pip install twilio
+        run: python -m pip install --upgrade pip twilio
 
       - name: Send WhatsApp notification
         env:
@@ -196,46 +196,67 @@ jobs:
           COMMIT_MSG: ${{ needs.deploy.outputs.commit_message }}
           COMMIT_AUTHOR: ${{ needs.deploy.outputs.commit_author }}
           DEPLOY_STATUS: ${{ needs.deploy.result }}
+          REPO_NAME: ${{ github.repository }}
+          ENV_NAME: ${{ inputs.environment }}
         run: |
-          python -c
-            'import os
-             from twilio.rest import Client
+          python <<'PY'
+          import os
+          import sys
+          from twilio.rest import Client
 
-              account_sid = os.environ['TWILIO_ACCOUNT_SID']
-             auth_token = os.environ['TWILIO_AUTH_TOKEN']
-             from_number = os.environ['TWILIO_WHATSAPP_NUMBER']
-             to_number = os.environ['TARGET_WHATSAPP_NUMBER']
- 
-             commit_sha = os.environ['COMMIT_SHA']
-             commit_msg = os.environ['COMMIT_MSG']
-             commit_author = os.environ['COMMIT_AUTHOR']
-             deploy_status = os.environ['DEPLOY_STATUS']
- 
-             if deploy_status == 'success':
-                 status_emoji = '🚀'
-                 status_text = 'Deployment Successful'
-             else:
-                 status_emoji = '❌'
-                 status_text = 'Deployment Failed'
- 
-             message = (
-                 f'{status_emoji} *Sapphire — {status_text}*\n\n'
-                 f'• *Repo:* {os.environ[\"GITHUB_REPOSITORY\"]}\n'
-                 f'• *Env:* ${{ inputs.environment }}\n'
-                 f'• *Commit:* `{commit_sha}`\n'
-                 f'• *Message:* {commit_msg}\n'
-                 f'• *Author:* {commit_author}'
-             )
- 
-             try:
-                 client = Client(account_sid, auth_token)
-                 msg = client.messages.create(
-                     body=message,
-                     from_=f'whatsapp:{from_number}',
-                     to=f'whatsapp:{to_number}'
-                 )
-                 print(f'✅ WhatsApp sent! SID: {msg.sid}')
-             except Exception as e:
-                 print(f'❌ Twilio error: {e}')
-                 exit(1)
-             '
+          def whatsapp_format(number: str) -> str:
+              number = number.strip()
+              return number if number.startswith("whatsapp:") else f"whatsapp:{number}"
+
+          required = [
+              "TWILIO_ACCOUNT_SID",
+              "TWILIO_AUTH_TOKEN",
+              "TWILIO_WHATSAPP_NUMBER",
+              "TARGET_WHATSAPP_NUMBER",
+          ]
+
+          missing = [key for key in required if not os.getenv(key)]
+          if missing:
+              print(f"Missing required secrets/env vars: {', '.join(missing)}")
+              sys.exit(1)
+
+          account_sid = os.environ["TWILIO_ACCOUNT_SID"]
+          auth_token = os.environ["TWILIO_AUTH_TOKEN"]
+          from_number = whatsapp_format(os.environ["TWILIO_WHATSAPP_NUMBER"])
+          to_number = whatsapp_format(os.environ["TARGET_WHATSAPP_NUMBER"])
+
+          commit_sha = os.getenv("COMMIT_SHA", "unknown")
+          commit_msg = os.getenv("COMMIT_MSG", "No commit message")
+          commit_author = os.getenv("COMMIT_AUTHOR", "Unknown")
+          deploy_status = os.getenv("DEPLOY_STATUS", "unknown")
+          repo_name = os.getenv("REPO_NAME", "unknown/repo")
+          env_name = os.getenv("ENV_NAME", "unknown")
+
+          if deploy_status == "success":
+              status_emoji = "🚀"
+              status_text = "Deployment Successful"
+          else:
+              status_emoji = "❌"
+              status_text = f"Deployment {deploy_status.title()}"
+
+          body = (
+              f"{status_emoji} Sapphire - {status_text}\n\n"
+              f"Repo: {repo_name}\n"
+              f"Environment: {env_name}\n"
+              f"Commit: {commit_sha}\n"
+              f"Message: {commit_msg}\n"
+              f"Author: {commit_author}"
+          )
+
+          try:
+              client = Client(account_sid, auth_token)
+              message = client.messages.create(
+                  body=body,
+                  from_=from_number,
+                  to=to_number,
+              )
+              print(f"WhatsApp sent successfully. SID: {message.sid}")
+          except Exception as e:
+              print(f"Twilio send failed: {e}")
+              sys.exit(1)
+          PY
