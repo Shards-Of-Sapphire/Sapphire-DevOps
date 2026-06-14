@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   cicd:
-    uses: sapphire-collective/devops-central/.github/workflows/ci-cd-template.yml@main
+    uses: sapphire-devops/.github/workflows/ci-cd-template.yml@main
     with:
       environment: production  # or staging, dev, etc.
     secrets:
