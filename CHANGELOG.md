@@ -1,10 +1,12 @@
 ## [2026-06-14 12:04:54 UTC] - Shaik Zayed Saleem
+>
 > **Commit:** `282d0c8`
 > **Message:** Merge branch 'main' of https://github.com/Shards-Of-Sapphire/Sapphire-DevOps
 > **Environment:** production
 
 
 ## [2026-06-14 11:08:13 UTC] - Shaik Zayed Saleem
+
 > **Commit:** `65351f1`
 > **Message:** fix: correct repository path in deploy workflow
 > **Environment:** production

@@ -171,7 +171,7 @@ jobs:
           fi
 
   # --- JOB 4: Notify WhatsApp ---
-    notify-whatsapp:
+  notify-whatsapp:
     name: Notify WhatsApp
     needs: [deploy, update-changelog]
     runs-on: ubuntu-latest
