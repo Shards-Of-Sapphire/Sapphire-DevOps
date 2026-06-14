@@ -1,0 +1,19 @@
+# .github/workflows/deploy.yml   ← inside each project repo
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Must grant write so the reusable workflow can push the changelog back
+permissions:
+  contents: write
+
+jobs:
+  cicd:
+    uses: sapphire-collective/devops-central/.github/workflows/ci-cd-template.yml@main
+    with:
+      environment: production           # or staging, dev — whatever fits the branch
+    secrets:
+      DEPLOY_KEY:          ${{ secrets.DEPLOY_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
